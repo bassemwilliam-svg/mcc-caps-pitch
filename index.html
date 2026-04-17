@@ -3061,15 +3061,10 @@ STYLE GUIDANCE
 - If asked something outside this scope, say so briefly and redirect.`;
 
 // ─── Claude proxy endpoint ───────────────────────────────────────────────
-// The Anthropic API key is held server-side by the Cloudflare Worker.
-// Local dev:   run `wrangler dev` inside /worker  →  auto-picked below.
-// Production: replace PROD_CLAUDE_PROXY_URL with the deployed Worker URL
-//             after running `wrangler deploy`.
-const LOCAL_CLAUDE_PROXY_URL = 'http://127.0.0.1:8787';
-const PROD_CLAUDE_PROXY_URL  = 'https://mcc-caps-ai.YOUR-SUBDOMAIN.workers.dev';
-const CLAUDE_PROXY_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? LOCAL_CLAUDE_PROXY_URL
-  : PROD_CLAUDE_PROXY_URL;
+// Same-origin serverless function on Vercel. The Anthropic API key lives
+// as a Vercel environment variable (ANTHROPIC_API_KEY) and is never
+// exposed to the browser. See /api/chat.js for the function.
+const CLAUDE_PROXY_URL = '/api/chat';
 
 const llmConfig = {
   model: 'claude-haiku-4-5-20251001',
@@ -3080,7 +3075,7 @@ function updateLlmStatus() {
   const s = document.getElementById('llmStatus');
   const label = s?.querySelector('.llm-status-label');
   if (!s || !label) return;
-  const proxyConfigured = CLAUDE_PROXY_URL && !/YOUR-SUBDOMAIN/.test(CLAUDE_PROXY_URL);
+  const proxyConfigured = !!CLAUDE_PROXY_URL;
   if (proxyConfigured) {
     s.classList.add('live');
     label.innerHTML = '<span class="lang-en">Live · Claude</span><span class="lang-ar">متصل · Claude</span>';
@@ -3132,7 +3127,7 @@ function llmAsk(query) {
   const L = document.documentElement.lang === 'ar' ? 'ar' : 'en';
   llmRenderMsg('user', query);
   const typing = llmTyping();
-  const proxyConfigured = CLAUDE_PROXY_URL && !/YOUR-SUBDOMAIN/.test(CLAUDE_PROXY_URL);
+  const proxyConfigured = !!CLAUDE_PROXY_URL;
   if (proxyConfigured) {
     llmAskClaude(query, typing);
     return;
